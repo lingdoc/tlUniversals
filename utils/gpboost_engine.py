@@ -138,7 +138,7 @@ def process_single_feature_gpboost(featfile, gldf_shared, ntrees):
         if not os.path.exists(trees_gz_path):
             stats_profile["Reason"] = "Missing tree archive file"
             return univ, stats_profile
-        # get phylogenies matrix for this universal
+        # get phylogenies for this universal
         tree_branches_list = parse_nexus_tree_topology(trees_gz_path, num_trees=ntrees)
         if not tree_branches_list:
             stats_profile["Reason"] = "Tree file processing error"
@@ -173,7 +173,7 @@ def process_single_feature_gpboost(featfile, gldf_shared, ntrees):
                     group_data=group_data, # random effect intercepts (family, macroarea, branch)
                     gp_coords=coords, # lat/long coordinates for spatial GP component
                     cov_function="exponential", # spatial correlation decays exponentially with distance
-                    likelihood="bernoulli_logit", # # binary DV (presence/absence) via logit link
+                    likelihood="bernoulli_logit", # binary DV (presence/absence) via logit link
                     num_parallel_threads=16 # optimized for 32-core cpu with 2 workers
                 )
 
@@ -197,7 +197,7 @@ def process_single_feature_gpboost(featfile, gldf_shared, ntrees):
                     s_val = float(coef_dict["Covariate_2"].get("Std. err.", np.nan))
 
                     # live print verification
-                    print(f"   ⚙️ [Tree Step Log] Feature: {univ} | Extracted Slope: {p_val:.4f} | Raw SE: {s_val}")
+                    print(f"   [Tree Step Log] Feature: {univ} | Extracted Slope: {p_val:.4f} | Raw SE: {s_val}")
 
                     if np.isnan(s_val) or np.isinf(s_val) or s_val <= 0:
                         s_val = 1.0  # boundary protection fallback
