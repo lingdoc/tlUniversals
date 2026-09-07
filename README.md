@@ -1,12 +1,14 @@
 # The Universality Gap: Mitigating Model-Induced Shrinkage in Spatio-Phylogenetic Typology
 
-This repository supports a reanalysis of the findings in Verkerk et al 2025 with a focus on optimizing the underlying methodology for identifying significant statistical universals. Specifically, the Python `gpboost` library is used to allow for a more nuanced handling of language isolates than is possible with the covariance matrix used by R's `brms` library, and how phylogenetic evolution co-evolution is subsequently handled in `BayesTraits`. This constructive reanalysis confirms the main claims of the paper but also highlights the likely presence of a greater number of significant results than was reported.
+This repository supports a reanalysis of the findings in Verkerk et al 2025 with a focus on optimizing the underlying methodology for identifying significant statistical universals. Specifically, I implement a Generalized Linear Mixed Model (GLMM) with a continuous Gaussian Process (GP). I utilize the Python `gpboost` library primarily for its ability to handle Gaussian Process matrices (for spatial autocorrelation) alongside mixed effects (language family, branch, macroarea) - the Tree Boosting functionality in GPBoost is not being used at this time.
+
+This specific architecture (GLMM + GP) allows for a more nuanced handling of language isolates than is possible with the covariance matrix used by R's `brms` library, as well as how phylogenetic evolution co-evolution is subsequently handled in `BayesTraits`. This constructive reanalysis confirms the main claims of the paper but also highlights the likely presence of a greater number of significant results than was reported.
 
 The repository is forked from the original GitHub repo containing the data underlying the Verkerk et al 2025 paper (https://github.com/SimonGreenhill/TestingLinguisticUniversals). Datasets include (for each universal) a single coded language file and a 1000- or 100-tree sample of phylogenies. The relevant data is stored in the `tlu` folder.
 
 To check the files and relevant statistics, run the script at `utils/check_datasets.py`.
 
-The model is instantiated using the code in `utils/gpboost_engine.py`.
+The model is instantiated with the code in `utils/gpboost_engine.py`.
 
 To run the Python 20-tree model on all 191 universals, use the following script: `run_pipeline_20tree_check.py` - this produces `output/GPBoost_01_20tree.xlsx`.
 

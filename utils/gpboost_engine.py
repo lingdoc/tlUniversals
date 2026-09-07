@@ -167,7 +167,7 @@ def process_single_feature_gpboost(featfile, gldf_shared, ntrees):
 
             try:
                 # implement a Bernoulli Logit GPMM to capture:
-                # 1. discrete genealogical hierarchies (via group_data)
+                # 1. structured dependencies (via group_data)
                 # 2. continuous spatial autocorrelation (via GP kernel)
                 gp_model = gpb.GPModel(
                     group_data=group_data, # hierarchical intercepts (family, macroarea, branch)
