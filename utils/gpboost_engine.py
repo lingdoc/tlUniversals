@@ -170,7 +170,7 @@ def process_single_feature_gpboost(featfile, gldf_shared, ntrees):
                 # 1. structured dependencies (via group_data)
                 # 2. continuous spatial autocorrelation (via GP kernel)
                 gp_model = gpb.GPModel(
-                    group_data=group_data, # hierarchical intercepts (family, macroarea, branch)
+                    group_data=group_data, # random effect intercepts (family, macroarea, branch)
                     gp_coords=coords, # lat/long coordinates for spatial GP component
                     cov_function="exponential", # spatial correlation decays exponentially with distance
                     likelihood="bernoulli_logit", # # binary DV (presence/absence) via logit link
