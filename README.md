@@ -1,6 +1,6 @@
-# Hidden universals in human language: Resolving parameter collapse in global typology
+# The Universality Gap: Mitigating Model-Induced Shrinkage in Spatio-Phylogenetic Typology
 
-This repository supports a replication of the findings in Verkerk et al 2025 with a focus on optimizing the underlying methodology for identifying significant statistical universals. Specifically, the Python `gpboost` library is used to allow for a more nuanced handling of language isolates than is possible with the phylogenetic covariance matrix used by R's `brms` library. This replication confirms the main claims of the paper but also highlights the likely presence of a greater number of significant results than was reported.
+This repository supports a reanalysis of the findings in Verkerk et al 2025 with a focus on optimizing the underlying methodology for identifying significant statistical universals. Specifically, the Python `gpboost` library is used to allow for a more nuanced handling of language isolates than is possible with the covariance matrix used by R's `brms` library, and how phylogenetic evolution co-evolution is subsequently handled in `BayesTraits`. This constructive reanalysis confirms the main claims of the paper but also highlights the likely presence of a greater number of significant results than was reported.
 
 The repository is forked from the original GitHub repo containing the data underlying the Verkerk et al 2025 paper (https://github.com/SimonGreenhill/TestingLinguisticUniversals). Datasets include (for each universal) a single coded language file and a 1000- or 100-tree sample of phylogenies. The relevant data is stored in the `tlu` folder.
 
