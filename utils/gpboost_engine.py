@@ -178,13 +178,14 @@ def process_single_feature_gpboost(featfile, gldf_shared, ntrees):
                 )
 
                 # configure L-BFGS optimizer
+                # configure L-BFGS optimizer with accurate parameter initializations
                 gp_model.set_optim_params(params={
-                    "optimizer_cov": "lbfgs", # use L-BFGS to maximize the marginal likelihood
-                    "maxit": 35, # max iterations allowed for convergence
-                    # initial values: [len_scale_1, len_scale_2, len_scale_3, signal_var, noise_var]
-                    "init_cov_pars": [0.2, 0.2, 0.2, 0.5, 1.5],
-                    "convergence_criterion": "relative_change_in_parameters", # stopping condition
-                    "delta_rel_conv": 1e-3 # threshold for parameter stability
+                    "optimizer_cov": "lbfgs", # maximize marginal likelihood via L-BFGS
+                    "maxit": 35, # maximum iterations allowed for convergence
+                    # Order: [var_family, var_macroarea, var_branch, var_spatial, range_spatial]
+                    "init_cov_pars": [0.2, 0.2, 0.2, 0.5, 1.5], 
+                    "convergence_criterion": "relative_change_in_parameters",
+                    "delta_rel_conv": 1e-3 # convergence threshold
                 })
                 # fit the model
                 gp_model.fit(y=y, X=X_with_intercept)
