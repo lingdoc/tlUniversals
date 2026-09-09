@@ -59,23 +59,28 @@ if __name__ == "__main__":
 
     xdict = {}
 
+    run = True
     if os.path.isfile(output_excel):
         response = input(f"The file '{os.path.basename(output_excel)}' already exists.\nContinuing will overwrite the file.\nDo you wish to proceed? (y/n): ")
         # Safely default to canceling unless the user explicitly confirms
         if response.lower() not in ['y', 'yes']:
             print("Operation canceled. File was not overwritten.")
+            run = False
             exit()
         else:
-            # asynchronous process worker submission layer
-            with ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
-                future_to_file = {
-                    executor.submit(process_single_feature_gpboost, ffile, gldf_shared, TARGET_NTREES): ffile
-                    for ffile in files_to_process
-                }
+            run = True
 
-                for future in tqdm(as_completed(future_to_file), total=len(files_to_process), desc="Running 100-Tree Engine", unit="feature"):
-                    univ_key, stats_row = future.result()
-                    xdict[univ_key] = stats_row
+    if run:
+        # asynchronous process worker submission layer
+        with ProcessPoolExecutor(max_workers=MAX_WORKERS) as executor:
+            future_to_file = {
+                executor.submit(process_single_feature_gpboost, ffile, gldf_shared, TARGET_NTREES): ffile
+                for ffile in files_to_process
+            }
+
+            for future in tqdm(as_completed(future_to_file), total=len(files_to_process), desc="Running 100-Tree Engine", unit="feature"):
+                univ_key, stats_row = future.result()
+                xdict[univ_key] = stats_row
 
     # compile dataset output rows and export workbook data
     if xdict:
