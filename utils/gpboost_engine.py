@@ -115,7 +115,7 @@ def process_single_feature_gpboost(featfile, gldf_shared, ntrees):
         # merge the universal-specific dataset with the glottolog dataset
         df = pd.merge(gldf_shared_copy, fdf, on='glottocode', how='inner')
         # keep only the following columns
-        df = df.dropna(subset=['IV', 'DV', 'latitude', 'longitude', 'macroarea', 'Family_ID'])
+        df = df[['IV', 'DV', 'latitude', 'longitude', 'macroarea', 'Family_ID']]
         df['DV'] = pd.to_numeric(df['DV'], errors='coerce') # ensure the values in this column are binary
         df['IV'] = pd.to_numeric(df['IV'], errors='coerce') # ensure the values in this column are binary
         df = df.dropna(subset=['IV', 'DV']) # drop missing info
@@ -183,7 +183,7 @@ def process_single_feature_gpboost(featfile, gldf_shared, ntrees):
                     "optimizer_cov": "lbfgs", # maximize marginal likelihood via L-BFGS
                     "maxit": 35, # maximum iterations allowed for convergence
                     # Order: [var_family, var_macroarea, var_branch, var_spatial, range_spatial]
-                    "init_cov_pars": [0.2, 0.2, 0.2, 0.5, 1.5], 
+                    "init_cov_pars": [0.2, 0.2, 0.2, 0.5, 1.5],
                     "convergence_criterion": "relative_change_in_parameters",
                     "delta_rel_conv": 1e-3 # convergence threshold
                 })
