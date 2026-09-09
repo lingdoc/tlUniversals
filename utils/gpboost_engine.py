@@ -222,6 +222,31 @@ def process_single_feature_gpboost(featfile, gldf_shared, ntrees, output_dir="co
             except Exception as e:
                 print(f"   Execution crash on tree step: {str(e)}")
                 continue
+
+        # get random effects for each observation
+        try:
+            preds = gp_model.predict(
+                X_pred=X_with_intercept,
+                group_data_pred=group_data,
+                gp_coords_pred=coords,
+                predict_response=False,
+                predict_var=True
+            )
+            # store in a df
+            df_latent = pd.DataFrame({
+                "Glottocode": df['glottocode'].values,
+                "Family_ID": df['Family_ID'].values,
+                "GPBoost_Latent_Mean": preds['mu'],
+                "GPBoost_Latent_Variance": preds['var']
+            })
+            # save the predictions for downstream analysis
+            latent_out_path = os.path.join(output_dir, f"gpboost_latent_all_languages_{univ.lower()}.csv")
+            df_latent.to_csv(latent_out_path, index=False)
+            print(f"   All language random effects successfully secured at: '{latent_out_path}'")
+
+        except Exception as pred_err:
+            print(f"   Warning: Could not dump latent random effects for {univ}: {str(pred_err)}")
+
         # handle errors
         if not params:
             stats_profile["Status"] = "Failed"
