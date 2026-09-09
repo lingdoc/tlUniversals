@@ -54,7 +54,7 @@ def parse_nexus_tree_topology(trees_gz_path, num_trees=50):
     sampled_indices = np.linspace(0, len(raw_tree_lines) - 1, num_trees, dtype=int)
     sampled_trees_branches = []
 
-    for idx in sampled_indices:
+    for tree_idx, idx in enumerate(sampled_indices):
         line_clean = raw_tree_lines[idx]
         tree_string = line_clean.split("=", 1)[1].strip() if "=" in line_clean else line_clean
         tree_string = re.sub(r'\[.*?\]', '', tree_string)
@@ -62,7 +62,7 @@ def parse_nexus_tree_topology(trees_gz_path, num_trees=50):
         branch_mapping = {}
         node_counter = 10000
         stack = []
-        # get the nodes
+
         for i, char in enumerate(tree_string):
             if char == '(':
                 stack.append(node_counter)
@@ -76,21 +76,25 @@ def parse_nexus_tree_topology(trees_gz_path, num_trees=50):
                     if token in translate_map and stack:
                         branch_mapping[translate_map[token]] = stack[-1]
 
-        sampled_trees_branches.append(branch_mapping) # append the branches
+        sampled_trees_branches.append((tree_idx, branch_mapping)) # store both tree configuration matrix and its original position index
 
     return sampled_trees_branches
 
-def process_single_feature_gpboost(featfile, gldf_shared, ntrees):
+def process_single_feature_gpboost(featfile, gldf_shared, ntrees, output_dir="comparison_outputs"):
     """
     Fits a Bernoulli Logit model over ntrees incorporating a continuous spatial GP matrix.
+    Captures individual step estimations natively across the phylogenetic landscape.
     """
     clean_path = featfile.replace("\\", "/")
     path_parts = clean_path.split("/")
     univ = path_parts[-2]
-    # get the features and trees
+
     feature_dir = os.path.dirname(featfile)
     trees_gz_path = os.path.join(feature_dir, "pruned_tree.trees.gz")
-    # dict to store stats
+    output_dir = os.path.join("output", output_dir)
+
+    os.makedirs(output_dir, exist_ok=True)
+
     stats_profile = {
         "Status": "Skipped", "Reason": "None", "Total_Languages_Found": 0,
         "Distinct_Macroareas": 0, "Distinct_Families": 0, "DV_Variance": 0.0,
@@ -114,11 +118,13 @@ def process_single_feature_gpboost(featfile, gldf_shared, ntrees):
         gldf_shared_copy['glottocode'] = gldf_shared_copy['glottocode'].astype(str).str.strip().str.lower()
         # merge the universal-specific dataset with the glottolog dataset
         df = pd.merge(gldf_shared_copy, fdf, on='glottocode', how='inner')
-        # keep only the following columns
-        df = df[['IV', 'DV', 'latitude', 'longitude', 'macroarea', 'Family_ID']]
+        # handle isolates/singletons by assigning their glottocode to maintain group integrity
+        df['Family_ID'] = df['Family_ID'].fillna(df['glottocode'])
+        # drop rows with missing data in any of these columns
+        df = df.dropna(subset=['IV', 'DV', 'latitude', 'longitude', 'macroarea', 'Family_ID'])
         df['DV'] = pd.to_numeric(df['DV'], errors='coerce') # ensure the values in this column are binary
         df['IV'] = pd.to_numeric(df['IV'], errors='coerce') # ensure the values in this column are binary
-        df = df.dropna(subset=['IV', 'DV']) # drop missing info
+
         # get some statistical info for this universal
         stats_profile["Total_Languages_Found"] = len(df)
         if len(df) > 0:
@@ -143,8 +149,6 @@ def process_single_feature_gpboost(featfile, gldf_shared, ntrees):
         if not tree_branches_list:
             stats_profile["Reason"] = "Tree file processing error"
             return univ, stats_profile
-        # handle isolates/singletons by assigning their glottocode to maintain group integrity
-        df['Family_ID'] = df['Family_ID'].fillna(df['glottocode'])
         # convert spatial and target variables to numpy arrays for GPBoost compatibility
         coords = df[['latitude', 'longitude']].to_numpy().astype(float)
         y = df['DV'].to_numpy().astype(float)
@@ -156,9 +160,10 @@ def process_single_feature_gpboost(featfile, gldf_shared, ntrees):
         macro_factor = df['macroarea'].astype('category').cat.codes.to_numpy()
         # initialize result containers
         params, ses = [], []
+        trajectory_records = [] # array tracking raw parameters across iterations
         had_hessian_issue = False
         # iterate through each sampled phylogeny to estimate model parameters
-        for branch_map in tree_branches_list:
+        for iter_id, branch_map in tree_branches_list:
             # map glottocodes to specific branches; fill missing with 0 (root/unassigned)
             sub_branch_series = df['glottocode'].map(branch_map).fillna(0).astype(int)
             branch_factor = sub_branch_series.astype('category').cat.codes.to_numpy()
@@ -178,7 +183,6 @@ def process_single_feature_gpboost(featfile, gldf_shared, ntrees):
                 )
 
                 # configure L-BFGS optimizer
-                # configure L-BFGS optimizer with accurate parameter initializations
                 gp_model.set_optim_params(params={
                     "optimizer_cov": "lbfgs", # maximize marginal likelihood via L-BFGS
                     "maxit": 35, # maximum iterations allowed for convergence
@@ -206,6 +210,15 @@ def process_single_feature_gpboost(featfile, gldf_shared, ntrees):
 
                     params.append(p_val)
                     ses.append(s_val)
+
+                    # data logging
+                    trajectory_records.append({
+                        "Feature": univ,
+                        "Tree_Sample_Index": iter_id,
+                        "Beta_Slope": p_val,
+                        "Standard_Error": s_val
+                    })
+
             except Exception as e:
                 print(f"   Execution crash on tree step: {str(e)}")
                 continue
@@ -214,6 +227,14 @@ def process_single_feature_gpboost(featfile, gldf_shared, ntrees):
             stats_profile["Status"] = "Failed"
             stats_profile["Reason"] = "Model did not converge on any tree configuration"
             return univ, stats_profile
+
+        # save tracking estimates
+        if trajectory_records:
+            df_traj = pd.DataFrame(trajectory_records)
+            traj_out_path = os.path.join(output_dir, f"gpboost_100tree_trajectory_{univ.lower()}.csv")
+            df_traj.to_csv(traj_out_path, index=False)
+            print(f"   Trajectory logging complete! Saved to '{traj_out_path}'")
+
         # calculate final values for the universal
         final_param = float(np.median(params))
         final_se = float(np.median(ses))
