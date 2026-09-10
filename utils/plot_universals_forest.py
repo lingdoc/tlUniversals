@@ -9,14 +9,14 @@ def generate_supplementary_tables(df_master):
     """
     Generates two separate Excel files:
     1. Table_A_Consensus.xlsx (Verkerk significant)
-    2. Table_B_Expansion.xlsx (GPB significant, Verkerk not)
-    Includes GPB Beta values in both.
+    2. Table_B_Expansion.xlsx (GPGLMM significant, Verkerk not)
+    Includes GPGLMM Beta values in both.
     """
 
     # --- CONFIGURATION (Ensure these match your master dataframe exactly) ---
     VERKERK_SIG_COL = 'Verkerk_Final_CoEvol'
-    GPB_SIG_COL = 'GPB_100Tree_IsSig'
-    GPB_BETA_COL = 'GPB_100Tree_Beta'
+    GPGLMM_SIG_COL = 'GPGLMM_100Tree_IsSig'
+    GPGLMM_BETA_COL = 'GPGLMM_100Tree_Beta'
     SHORT_NAME_COL = 'PU_Short'
     DEF_COL = 'Proposed_Universal_Claim'
     CODE_COL = 'Feature_ID'
@@ -39,36 +39,36 @@ def generate_supplementary_tables(df_master):
 
     # apply masking
     verkerk_sig_mask = df[VERKERK_SIG_COL].apply(is_sig)
-    gpb_sig_mask = df[GPB_SIG_COL].apply(is_sig)
+    gpglmm_sig_mask = df[GPGLMM_SIG_COL].apply(is_sig)
 
     # generate A (consensus / Verkerk supported)
     # filter: Verkerk is significant
     table_a_rows = df[verkerk_sig_mask].copy()
 
     def get_source_a(row):
-        # check if GPB also agrees
-        if is_sig(row[GPB_SIG_COL]):
+        # check if GPGLMM also agrees
+        if is_sig(row[GPGLMM_SIG_COL]):
             return "Both"
         return "Verkerk"
 
     table_a_rows['Support_Source'] = table_a_rows.apply(get_source_a, axis=1)
 
     # select relevant columns including Beta
-    table_a = table_a_rows[[CODE_COL, SHORT_NAME_COL, DEF_COL, GPB_BETA_COL, 'Support_Source']].copy()
-    table_a.columns = ['Code', 'Short_Name', 'Definition', 'GPB_Beta', 'Support_Source']
+    table_a = table_a_rows[[CODE_COL, SHORT_NAME_COL, DEF_COL, GPGLMM_BETA_COL, 'Support_Source']].copy()
+    table_a.columns = ['Code', 'Short_Name', 'Definition', 'GPGLMM_Beta', 'Support_Source']
 
-    # generate table B (expansion / GPB supported)
-    # filter: GPB is significant AND Verkerk is NOT significant
-    table_b_rows = df[gpb_sig_mask & ~verkerk_sig_mask].copy()
-    table_b_rows['Support_Source'] = "GPB"
+    # generate table B (expansion / GPGLMM supported)
+    # filter: GPGLMM is significant AND Verkerk is NOT significant
+    table_b_rows = df[gpglmm_sig_mask & ~verkerk_sig_mask].copy()
+    table_b_rows['Support_Source'] = "GPGLMM"
 
-    table_b = table_b_rows[[CODE_COL, SHORT_NAME_COL, DEF_COL, GPB_BETA_COL, 'Support_Source']].copy()
-    table_b.columns = ['Code', 'Short_Name', 'Definition', 'GPB_Beta', 'Support_Source']
+    table_b = table_b_rows[[CODE_COL, SHORT_NAME_COL, DEF_COL, GPGLMM_BETA_COL, 'Support_Source']].copy()
+    table_b.columns = ['Code', 'Short_Name', 'Definition', 'GPGLMM_Beta', 'Support_Source']
 
     # generate table C to conduct binomial test on 109 significant features
-    table_c_rows = df[gpb_sig_mask].copy()
+    table_c_rows = df[gpglmm_sig_mask].copy()
     # column containing the Beta coefficients.
-    target_column = 'GPB_100Tree_Beta'
+    target_column = 'GPGLMM_100Tree_Beta'
     # count how many betas are greater than zero
     successes = (table_c_rows[target_column] > 0).sum()
     total_n = len(table_c_rows)
@@ -106,7 +106,7 @@ def generate_supplementary_tables(df_master):
 
 
 def generate_proportional_quadrant_plot():
-    master_file = "../output/Results_combined_BT_GPB.xlsx"
+    master_file = "../output/Results_combined_BT_GPGLMM.xlsx"
     output_pdf = "../output/universals_forest_plot.pdf"
 
     df_master = pd.read_excel(master_file, index_col="Feature_ID")
@@ -114,8 +114,8 @@ def generate_proportional_quadrant_plot():
     # generate the tables
     generate_supplementary_tables(df_master)
 
-    df_sig = df_master[df_master["GPB_100Tree_IsSig"] == "YES"].copy()
-    df_sig["abs_beta"] = df_sig["GPB_100Tree_Beta"].abs()
+    df_sig = df_master[df_master["GPGLMM_100Tree_IsSig"] == "YES"].copy()
+    df_sig["abs_beta"] = df_sig["GPGLMM_100Tree_Beta"].abs()
     df_sig["Domain"] = df_sig["Domain"].astype(str).str.strip().str.lower()
 
     categories = ["broad word order", "narrow word order", "hierarchy", "other"]
@@ -142,12 +142,12 @@ def generate_proportional_quadrant_plot():
         colors = ['#1f4e79' if r["Verkerk_Final_CoEvol"] == "YES" else '#5b9bd5' for _, r in df_sub.iterrows()]
         min_whisker, max_whisker = 0.0, 0.0
         for i, (_, row) in enumerate(df_sub.iterrows()):
-            b, se = row["GPB_100Tree_Beta"], row["GPB_100Tree_SE"]
+            b, se = row["GPGLMM_100Tree_Beta"], row["GPGLMM_100Tree_SE"]
             ci_low, ci_high = b - (1.96 * se), b + (1.96 * se)
             if ci_low < min_whisker: min_whisker = ci_low
             if ci_high > max_whisker: max_whisker = ci_high
             ax.plot([ci_low, ci_high], [i, i], color='#7f7f7f', linewidth=0.9, zorder=1)
-        ax.scatter(df_sub["GPB_100Tree_Beta"], y_pos, c=colors, s=14, edgecolor='black', linewidth=0.4, zorder=2)
+        ax.scatter(df_sub["GPGLMM_100Tree_Beta"], y_pos, c=colors, s=14, edgecolor='black', linewidth=0.4, zorder=2)
         ax.set_yticks(y_pos)
         ax.set_yticklabels(df_sub["PU_Short"], fontsize=6)
         if flip_y_axis:

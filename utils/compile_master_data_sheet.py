@@ -4,9 +4,9 @@ import numpy as np
 
 def generate_master_sheet():
     verkerk_file = "../tlu/BT_results_summary.txt"
-    run_20tree_file = "../output/GPBoost_01_20tree.xlsx"
-    run_100tree_file = "../output/GPBoost_02_100tree.xlsx"
-    output_master = "../output/Results_combined_BT_GPB.xlsx"
+    run_20tree_file = "../output/GPGLMM_01_20tree.xlsx"
+    run_100tree_file = "../output/GPGLMM_02_100tree.xlsx"
+    output_master = "../output/Results_combined_BT_GPGLMM.xlsx"
 
     # Verify workspace files are available
     missing = [f for f in [verkerk_file, run_20tree_file, run_100tree_file] if not os.path.exists(f)]
@@ -37,10 +37,10 @@ def generate_master_sheet():
 
         # 1. Extract 20-Tree Metrics
         status_20 = str(row_20.get("Status", "Analyzed"))
-        beta_20 = float(row_20.get("GPB_Param.", 0.0)) if status_20 == "Analyzed" else np.nan
-        se_20 = float(row_20.get("GPB_Std. err.", 1.0)) if status_20 == "Analyzed" else np.nan
-        p_20 = float(row_20.get("GPB_P>|z|", 1.0)) if status_20 == "Analyzed" else np.nan
-        is_sig_20 = str(row_20.get("GPB_sig", "NO")).strip().upper() == "YES" if status_20 == "Analyzed" else False
+        beta_20 = float(row_20.get("GPGLMM_Param.", 0.0)) if status_20 == "Analyzed" else np.nan
+        se_20 = float(row_20.get("GPGLMM_Std. err.", 1.0)) if status_20 == "Analyzed" else np.nan
+        p_20 = float(row_20.get("GPGLMM_P>|z|", 1.0)) if status_20 == "Analyzed" else np.nan
+        is_sig_20 = str(row_20.get("GPGLMM_sig", "NO")).strip().upper() == "YES" if status_20 == "Analyzed" else False
 
         # 2. Extract 100-Tree Validation Metrics
         status_100 = "Pruned (Not Significant in 20-Tree Stage)"
@@ -49,11 +49,10 @@ def generate_master_sheet():
         if feat in df_100.index:
             row_100 = df_100.loc[feat]
             status_100 = str(row_100.get("Status", "Analyzed"))
-            beta_100 = float(row_100.get("GPB_Param.", 0.0))
-            se_100 = float(row_100.get("GPB_Std. err.", 1.0))
-            p_100 = float(row_100.get("GPB_P>|z|", 1.0))
-            # FIX: Changed from 'GPB_sig._100' back to 'GPB_sig' because row_100 comes directly from df_100
-            is_sig_100 = str(row_100.get("GPB_sig", "NO")).strip().upper() == "YES"
+            beta_100 = float(row_100.get("GPGLMM_Param.", 0.0))
+            se_100 = float(row_100.get("GPGLMM_Std. err.", 1.0))
+            p_100 = float(row_100.get("GPGLMM_P>|z|", 1.0))
+            is_sig_100 = str(row_100.get("GPGLMM_sig", "NO")).strip().upper() == "YES"
 
         # 3. Extract Baseline Verkerk Metadata and Metrics
         v_supported_coevol = "NO"
@@ -89,16 +88,16 @@ def generate_master_sheet():
             "PU_Short": v_universal_short,
             "Verkerk_BMRS_Spatial_Stage1": v_bmrs_spatial,
             "Verkerk_Final_CoEvol": v_supported_coevol,
-            "GPB_20Tree_Status": status_20,
-            "GPB_20Tree_Beta": beta_20,
-            "GPB_20Tree_SE": se_20,
-            "GPB_20Tree_PValue": p_20,
-            "GPB_20Tree_IsSig": "YES" if is_sig_20 else "NO",
-            "GPB_100Tree_Status": status_100,
-            "GPB_100Tree_Beta": beta_100,
-            "GPB_100Tree_SE": se_100,
-            "GPB_100Tree_PValue": p_100,
-            "GPB_100Tree_IsSig": "YES" if is_sig_100 else "NO",
+            "GPGLMM_20Tree_Status": status_20,
+            "GPGLMM_20Tree_Beta": beta_20,
+            "GPGLMM_20Tree_SE": se_20,
+            "GPGLMM_20Tree_PValue": p_20,
+            "GPGLMM_20Tree_IsSig": "YES" if is_sig_20 else "NO",
+            "GPGLMM_100Tree_Status": status_100,
+            "GPGLMM_100Tree_Beta": beta_100,
+            "GPGLMM_100Tree_SE": se_100,
+            "GPGLMM_100Tree_PValue": p_100,
+            "GPGLMM_100Tree_IsSig": "YES" if is_sig_100 else "NO",
             "Definitive_Paper_Taxonomy": taxonomy
         }
 
@@ -106,7 +105,7 @@ def generate_master_sheet():
     df_master = pd.DataFrame.from_dict(master_records, orient="index")
 
     # Sort logically by taxonomy classification groups, then by statistical weight
-    df_master.sort_values(by=["Definitive_Paper_Taxonomy", "GPB_20Tree_PValue"], ascending=[True, True], inplace=True)
+    df_master.sort_values(by=["Definitive_Paper_Taxonomy", "GPGLMM_20Tree_PValue"], ascending=[True, True], inplace=True)
     df_master.to_excel(output_master, index_label="Feature_ID")
 
     print("\n==================================================================")

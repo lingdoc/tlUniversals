@@ -1,4 +1,4 @@
-import os
+GPGLMMimport os
 import gzip
 import re
 import warnings
@@ -80,7 +80,7 @@ def parse_nexus_tree_topology(trees_gz_path, num_trees=50):
 
     return sampled_trees_branches
 
-def process_single_feature_gpboost(featfile, gldf_shared, ntrees, output_dir="comparison_outputs"):
+def process_single_feature_gpglmm(featfile, gldf_shared, ntrees, output_dir="model_predictions"):
     """
     Fits a Bernoulli Logit model over ntrees incorporating a continuous spatial GP matrix.
     Captures individual step estimations natively across the phylogenetic landscape.
@@ -98,8 +98,8 @@ def process_single_feature_gpboost(featfile, gldf_shared, ntrees, output_dir="co
     stats_profile = {
         "Status": "Skipped", "Reason": "None", "Total_Languages_Found": 0,
         "Distinct_Macroareas": 0, "Distinct_Families": 0, "DV_Variance": 0.0,
-        "DV_Mean": 0.0, "GPB_n_obs": 0, "GPB_Param.": np.nan, "GPB_Std. err.": np.nan,
-        "GPB_z value": np.nan, "GPB_P>|z|": np.nan, "GPB_sig": "NO", "GPB_hsig": "NO", "GPB_hhsig": "NO"
+        "DV_Mean": 0.0, "GPGLMM_n_obs": 0, "GPGLMM_Param.": np.nan, "GPGLMM_Std. err.": np.nan,
+        "GPGLMM_z value": np.nan, "GPGLMM_P>|z|": np.nan, "GPGLMM_sig": "NO"
     }
 
     try:
@@ -236,11 +236,11 @@ def process_single_feature_gpboost(featfile, gldf_shared, ntrees, output_dir="co
             df_latent = pd.DataFrame({
                 "Glottocode": df['glottocode'].values,
                 "Family_ID": df['Family_ID'].values,
-                "GPBoost_Latent_Mean": preds['mu'],
-                "GPBoost_Latent_Variance": preds['var']
+                "GPGLMM_Latent_Mean": preds['mu'],
+                "GPGLMM_Latent_Variance": preds['var']
             })
             # save the predictions for downstream analysis
-            latent_out_path = os.path.join(output_dir, f"gpboost_latent_all_languages_{univ.lower()}.csv")
+            latent_out_path = os.path.join(output_dir, f"gpglmm_latent_all_languages_{univ.lower()}.csv")
             df_latent.to_csv(latent_out_path, index=False)
             print(f"   All language random effects successfully secured at: '{latent_out_path}'")
 
@@ -256,7 +256,7 @@ def process_single_feature_gpboost(featfile, gldf_shared, ntrees, output_dir="co
         # save tracking estimates
         if trajectory_records:
             df_traj = pd.DataFrame(trajectory_records)
-            traj_out_path = os.path.join(output_dir, f"gpboost_100tree_trajectory_{univ.lower()}.csv")
+            traj_out_path = os.path.join(output_dir, f"gpglmm_{ntrees}tree_trajectory_{univ.lower()}.csv")
             df_traj.to_csv(traj_out_path, index=False)
             print(f"   Trajectory logging complete! Saved to '{traj_out_path}'")
 
@@ -274,27 +274,16 @@ def process_single_feature_gpboost(featfile, gldf_shared, ntrees, output_dir="co
         # update final profile records
         stats_profile["Status"] = "Analyzed"
         stats_profile["Reason"] = "Hessian singular warning on sub-nodes" if had_hessian_issue else "Model completed successfully"
-        stats_profile["GPB_n_obs"] = len(df)
-        stats_profile["GPB_Param."] = final_param
-        stats_profile["GPB_Std. err."] = final_se
-        stats_profile["GPB_z value"] = z_values
-        stats_profile["GPB_P>|z|"] = p_values
+        stats_profile["GPGLMM_n_obs"] = len(df)
+        stats_profile["GPGLMM_Param."] = final_param
+        stats_profile["GPGLMM_Std. err."] = final_se
+        stats_profile["GPGLMM_z value"] = z_values
+        stats_profile["GPGLMM_P>|z|"] = p_values
         # determine significance
         if p_values < 0.05:
-            stats_profile["GPB_sig"] = "YES"
-            if p_values < 0.01:
-                stats_profile["GPB_hsig"] = "YES"
-                if p_values < 0.001:
-                    stats_profile["GPB_hhsig"] = "YES"
-                else:
-                    stats_profile["GPB_hhsig"] = "NO"
-            else:
-                stats_profile["GPB_hsig"] = "NO"
-                stats_profile["GPB_hhsig"] = "NO"
+            stats_profile["GPGLMM_sig"] = "YES"
         else:
-            stats_profile["GPB_sig"] = "NO"
-            stats_profile["GPB_hsig"] = "NO"
-            stats_profile["GPB_hhsig"] = "NO"
+            stats_profile["GPGLMM_sig"] = "NO"
 
         return univ, stats_profile
 
