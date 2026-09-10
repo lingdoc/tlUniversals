@@ -171,7 +171,7 @@ def process_single_feature_gpglmm(featfile, gldf_shared, ntrees, output_dir="mod
             group_data = np.column_stack((family_factor, macro_factor, branch_factor)).astype(float)
 
             try:
-                # implement a Bernoulli Logit GPMM to capture:
+                # implement a Bernoulli Logit GP-GLMM to capture:
                 # 1. structured dependencies (via group_data)
                 # 2. continuous spatial autocorrelation (via GP kernel)
                 gp_model = gpb.GPModel(
