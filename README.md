@@ -8,13 +8,13 @@ The repository is forked from the original GitHub repo containing the data under
 
 To check the files and relevant statistics, run the script at `utils/check_datasets.py`.
 
-The model is instantiated with the code in `utils/gpboost_engine.py`.
+The model is instantiated with the code in `utils/gpglmm_engine.py`.
 
-To run the Python 20-tree model on all 191 universals, use the following script: `run_pipeline_20tree_check.py` - this produces `output/GPBoost_01_20tree.xlsx`.
+To run the Python 20-tree model on all 191 universals, use the following script: `run_pipeline_20tree_check.py` - this produces `output/GPGLMM_01_20tree.xlsx`.
 
-To run the 100-tree model on the 114 universals found to be significant by the 20-tree model, use the following script: `run_targeted_100tree_parallel.py` - this script is optimized for parallel processing on a 32-core cpu and produces `output/GPBoost_02_100tree.xlsx`.
+To run the 100-tree model on the 114 universals found to be significant by the 20-tree model, use the following script: `run_targeted_100tree_parallel.py` - this script is optimized for parallel processing on a 32-core cpu and produces `output/GPGLMM_02_100tree.xlsx`.
 
-The final unified spreadsheet (`output/Results_combined_BT_GPB.xlsx`) combines the Verkerk et al results with the present analysis. To produce this file, run the script at `utils/compile_master_data_sheet.py`.
+The final unified spreadsheet (`output/Results_combined_BT_GPGLMM.xlsx`) combines the Verkerk et al results with the present analysis. To produce this file, run the script at `utils/compile_master_data_sheet.py`.
 
 To create a plot of the significant universals and their beta coefficients, run the script at `utils/plot_universals_forest.py` - it will create a pdf in the `output` directory based on the final unified spreadsheet.
 

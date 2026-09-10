@@ -7,7 +7,7 @@ from tqdm import tqdm
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 # import the engine processing routine from utils
-from utils.gpboost_engine import process_single_feature_gpboost
+from utils.gpglmm_engine import process_single_feature_gpglmm
 
 if __name__ == "__main__":
     # load language data
@@ -26,12 +26,12 @@ if __name__ == "__main__":
     search_pattern = os.path.join(start_directory, '**', file_pattern)
     matching_files = [x for x in glob.glob(search_pattern, recursive=True) if "_summary" not in x]
 
-    output_excel = "output/GPBoost_01_20tree.xlsx"
+    output_excel = "output/GPGLMM_01_20tree.xlsx"
 
     # set number of phylogenies to 20 for identifying initial significant correlations
     TARGET_NTREES = 20
 
-    print(" Launching Sequential Python-GPBoost Spatio-Phylogenetic Pipeline...")
+    print(" Launching Sequential Python-GPGLMM Spatio-Phylogenetic Pipeline...")
     print(f" Tree Sampling Depth: Processing {TARGET_NTREES} posterior tree variations per feature.")
     print(f" Total Linguistic Features queued: {len(matching_files)}\n")
 
@@ -45,8 +45,8 @@ if __name__ == "__main__":
             exit()
         else:
             # standard loop structure for full-thread utility
-            for ffile in tqdm(matching_files, desc="Running Python GPBoost Engine", unit="feature"):
-                univ_key, stats_row = process_single_feature_gpboost(ffile, gldf_shared, TARGET_NTREES)
+            for ffile in tqdm(matching_files, desc="Running Python GPGLMM Engine", unit="feature"):
+                univ_key, stats_row = process_single_feature_gpglmm(ffile, gldf_shared, TARGET_NTREES)
                 xdict[univ_key] = stats_row
 
     # compile dataset output rows and export summary workbook data
@@ -54,9 +54,9 @@ if __name__ == "__main__":
         df_final = pd.DataFrame.from_dict(xdict, orient='index')
         ordered_cols = [
             "Status", "Reason", "Total_Languages_Found", "Distinct_Macroareas",
-            "Distinct_Families", "DV_Variance", "DV_Mean", "GPB_n_obs",
-            "GPB_Param.", "GPB_Std. err.", "GPB_z value", "GPB_P>|z|",
-            "GPB_sig"
+            "Distinct_Families", "DV_Variance", "DV_Mean", "GPGLMM_n_obs",
+            "GPGLMM_Param.", "GPGLMM_Std. err.", "GPGLMM_z value", "GPGLMM_P>|z|",
+            "GPGLMM_sig"
         ]
         df_final = df_final[ordered_cols]
         df_final.to_excel(output_excel, index_label="Feature_ID")
@@ -71,10 +71,10 @@ if __name__ == "__main__":
         skipped_count  = (df_final['Status'] == "Skipped").sum()
         failed_count   = (df_final['Status'] == "Failed").sum()
 
-        sig_mask = (df_final['GPB_sig'] == "YES") & (df_final['Status'] == "Analyzed")
+        sig_mask = (df_final['GPGLMM_sig'] == "YES") & (df_final['Status'] == "Analyzed")
         total_significant = sig_mask.sum()
-        pos_sig = ((df_final['GPB_Param.'] > 0) & sig_mask).sum()
-        neg_sig = ((df_final['GPB_Param.'] < 0) & sig_mask).sum()
+        pos_sig = ((df_final['GPGLMM_Param.'] > 0) & sig_mask).sum()
+        neg_sig = ((df_final['GPGLMM_Param.'] < 0) & sig_mask).sum()
 
         print(f"🔹 Total Typological Features Processed : {total_features}")
         print(f"🔹 Total Natively Analyzed Models       : {analyzed_count}")
