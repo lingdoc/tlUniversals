@@ -14,7 +14,10 @@ To run the Python 20-tree model on all 191 universals, use the following script:
 
 To run the 100-tree model on the 114 universals found to be significant by the 20-tree model, use the following script: `run_targeted_100tree_parallel.py` - this script is optimized for parallel processing on a 32-core cpu and produces `output/GPGLMM_02_100tree.xlsx`.
 
-Statistical traces from the model during the 100-tree run are saved in `output/model_predictions/`.
+Statistical traces from the model during the 100-tree run are saved in `output/model_predictions/`. This directory contains two files for each feature/universal:
+
+1. `gpglmm_latent_all_languages_[feature].csv`: Regularized random effect snapshots, with stabilized latent means and predictive standard errors generated via the cross-classified Laplace optimization routine.
+2. `gpglmm_100tree_trajectory_[feature].csv`: Longitudinal logs tracking fixed-effect slope and standard errors across each step of the tree posterior distribution.
 
 The final unified spreadsheet (`output/Results_combined_BT_GPGLMM.xlsx`) combines the Verkerk et al results with the present analysis. To produce this file, run the script at `utils/compile_master_data_sheet.py`.
 
